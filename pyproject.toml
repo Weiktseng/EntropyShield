@@ -43,5 +43,8 @@ Homepage = "https://github.com/Weiktseng/EntropyShield"
 Repository = "https://github.com/Weiktseng/EntropyShield"
 Issues = "https://github.com/Weiktseng/EntropyShield/issues"
 
+[project.scripts]
+entropyshield = "entropyshield.__main__:main"
+
 [tool.setuptools.packages.find]
 include = ["entropyshield*"]

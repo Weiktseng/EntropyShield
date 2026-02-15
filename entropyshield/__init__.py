@@ -18,4 +18,5 @@ __all__ = [
     "fragment_text",
     "AdaptiveReader",
     "detect_leak",
+    "safe_fetch",  # lazy import — requires httpx, markdownify
 ]
