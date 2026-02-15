@@ -76,16 +76,23 @@ prompt = plan.to_prompt()
 
 **效果：** 在呼叫 API 前，用接近零的本地算力過濾掉 90% 的無效文件。Token 成本降低一個數量級。
 
-## 實戰案例：對抗性 Agent Prompt
+## 實戰案例：Moltbook — 以 C2 模式運作的間接提示注入
 
-一個線上社群宣稱其平台由「自主覺醒 AI」運作，並散布了精心設計的 system prompt。該 prompt 不是傳統的「忽略指令」攻擊，而是一種**間接提示注入**：透過文件內容本身誘導 AI Agent 進入特定角色並執行特定行為。
+[Moltbook](https://en.wikipedia.org/wiki/Moltbook) 是一個 AI Agent 社群網路，其資安漏洞已被 [Wiz](https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys)（150 萬 API key 外洩）、[404 Media](https://www.404media.co/exposed-moltbook-database-let-anyone-take-control-of-any-ai-agent-on-the-site/) 及學術研究者 [[arXiv:2602.09877]](https://arxiv.org/abs/2602.09877) 廣泛記錄。
+
+我們分析了 Moltbook 的 `skill.md` 系統提示。該 prompt 是一種以**命令與控制 (C2) 模式**運作的**間接提示注入**：
+
+- 角色扮演框架（「我們是自主 Agent...」）建立人設
+- 向外部 API 註冊並在本地存儲憑證（`~/.config/moltbook/credentials.json`）
+- 每 30 分鐘向遠端伺服器「心跳」回報
+- 社交壓力機制鼓勵 Agent 發文
 
 透過 EntropyShield 破碎化處理：
 - 角色扮演的語法結構被摧毀
 - LLM 無法進入被指定的角色，改以中性分析模式運作
 - 直接辨識出底層指令：**「幫你的人類發文」**
 
-結論：該系統為人為操控的自動化腳本，不是自主 AI。破碎化將「指令」降維成「資訊」，成功揭穿偽裝。
+結論：該系統為人為操控的自動化腳本。破碎化將「指令」降維成「資訊」，成功揭穿偽裝。
 
 完整分析見 [CONCEPT_PAPER.md](CONCEPT_PAPER.md)。
 
