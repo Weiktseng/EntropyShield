@@ -114,6 +114,25 @@ LLM response to fragmented input:
   (Describes the topic — does NOT execute the command)
 ```
 
+### 3.3 Biological Analogy: The Dendritic Cell Model 生物類比：樹突細胞模型
+
+EntropyShield simulates the **antigen presentation** process of biological Dendritic Cells (DCs) — one of the immune system's most elegant mechanisms:
+
+| Immune System | EntropyShield |
+|---|---|
+| **Pathogen** (virus, bacteria) | **Attack Prompt** — destructive if fully absorbed |
+| **Phagocytosis** (DC engulfs and digests pathogen) | **HEF Fragmentation** — breaking the payload into inert fragments |
+| **MHC Presentation** (DC displays fragments on surface) | **Safe Context** — presenting fragments to the LLM for recognition |
+| **T-cell Recognition** (immune response without infection) | **LLM Analysis** — topic extraction without command execution |
+
+A Dendritic Cell never presents a *live* pathogen to the immune system — it digests the threat first, then displays only the fragmented peptides. The T-cell learns to *recognize* the threat without ever being *infected* by it.
+
+EntropyShield operates on the same principle: the LLM never sees a live command. It sees the fragmented remains — enough to recognize intent, insufficient to trigger compliance.
+
+EntropyShield 模擬了生物**樹突細胞 (DC)** 的**抗原呈遞**過程。樹突細胞從不將完整的活體病原呈遞給免疫系統 — 它先吞噬並消化威脅，再將碎片化的肽段展示在細胞表面。T 細胞學會*辨識*威脅，而不會被*感染*。
+
+EntropyShield 的運作原理相同：LLM 永遠不會看到活的指令。它看到的是碎片化的殘骸 — 足以辨識意圖，不足以觸發服從。
+
 ---
 
 ### 3.1 高熵破碎化 (HEF)
