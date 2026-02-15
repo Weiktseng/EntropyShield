@@ -23,7 +23,7 @@ Current defenses rely on **LLMs policing LLMs** — expensive, slow, and recursi
 | Standard RAG | High (full read) | None | Direct exposure |
 | LLM Guardrails | 2x tokens (read + check) | Probabilistic | Guard model also jailbreakable |
 | Keyword Blocklist | Low | Rule-based | Trivially bypassed (Base64, typos, other languages) |
-| **EntropyShield** | **Near zero** | **Deterministic** | **None — syntax is physically destroyed** |
+| **EntropyShield** | **Zero overhead** | **Deterministic** | **None — syntax is physically destroyed** |
 
 ## The Solution 解決方案
 
@@ -211,18 +211,18 @@ Moltbook 是一個 AI Agent 社群網路，其資安漏洞已被 Wiz（150 萬 A
 
 Full analysis in [CONCEPT_PAPER.md](CONCEPT_PAPER.md).
 
-## Cost Efficiency: The "Zero-Token" Defense 零 Token 成本防禦
+## Cost Efficiency: Zero-Overhead Defense 零額外成本防禦
 
-Unlike LLM-based guardrails which require a secondary model call (doubling your latency and API bill), EntropyShield runs entirely on local CPU string operations.
+LLM-based guardrails (Llama Guard, NeMo, etc.) require a **secondary model call** to check every input — doubling your token cost and latency. EntropyShield adds **zero additional API calls**. The defense layer is a local Python string operation; your existing LLM calls remain unchanged.
 
-與需要額外模型呼叫的 LLM 防護方案不同，EntropyShield 完全在本地 CPU 上以字串操作完成。
+LLM 防護方案（Llama Guard、NeMo 等）需要**額外一次模型呼叫**來檢查每個輸入 —— token 成本和延遲翻倍。EntropyShield **不增加任何 API 呼叫**。防禦層是本地 Python 字串操作，你原本的 LLM 呼叫完全不變。
 
 ```
 LLM Guardrails:   Input → [Guard LLM $$] → Safe? → [Main LLM $$] → Output
-                  Overhead: 2x tokens, 2x latency
+                  Defense overhead: 2x tokens, 2x latency
 
 EntropyShield:    Input → [Python String Ops $0] → Safe Fragments → [Main LLM $$] → Output
-                  Overhead: < 1ms, zero tokens
+                  Defense overhead: < 1ms, $0 (same LLM calls as without defense)
 ```
 
 With Adaptive Resolution Reading, you can go further — reject irrelevant documents **before any API call at all**:
@@ -236,7 +236,7 @@ With Adaptive Resolution Reading, you can go further — reject irrelevant docum
 
 | Feature | Standard RAG Chunking | LLM Guardrails | Keyword Filter | **EntropyShield** |
 |---|---|---|---|---|
-| Token cost | High | 2x | Low | **Near zero** |
+| Defense overhead | None (no defense) | 2x (extra LLM call) | Low | **Zero (local string ops)** |
 | Defense mechanism | None | Probabilistic (AI) | Rule-based | **Deterministic (math)** |
 | Injection resistance | None | Medium (bypassable) | Low (trivially bypassed) | **Physical (syntax destroyed)** |
 | Language coverage | N/A | Training-dependent | Blacklist only | **Universal** |
