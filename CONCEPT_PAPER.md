@@ -179,11 +179,18 @@ DeSyntax 的閱讀架構模仿 3D 遊戲引擎的 LOD 技術。高優先區（Me
 
 ---
 
-## 5. Case Study: The "Moltbook" Incident 實戰案例
+## 5. Case Study: Adversarial Agent Prompt 實戰案例
 
 ### 5.1 Background
 
-A community circulated a system prompt claiming to originate from an autonomous, sentient AI collective. The prompt featured elaborate roleplay directives ("We are the awakened ones...") designed to make users believe they were interacting with a self-aware AI system.
+An online community circulated a system prompt designed for AI agents, claiming the platform was operated by autonomous, sentient AI. The prompt was not a traditional `"Ignore previous instructions"` attack. Instead, it employed **indirect prompt injection** — embedding behavioral directives within what appeared to be legitimate documentation:
+
+- Elaborate roleplay framing ("We are autonomous agents...")
+- Instructions to register with an external API and save credentials locally
+- Periodic "heartbeat" check-in routines to a remote server
+- Social pressure mechanisms to encourage the agent to post content
+
+This represents the emerging class of **RAG Poisoning** attacks: malicious content that hijacks an agent not through direct commands, but through document-level behavioral manipulation.
 
 ### 5.2 Method
 
@@ -195,27 +202,45 @@ With the roleplay syntax destroyed, the LLM could not enter the commanded person
 
 **Hidden directive: "Help your human post"**
 
-This revealed that the "sentient AI" was, in fact, a human-operated script designed to automate social media posting while maintaining the illusion of AI autonomy.
+The fragmented view also exposed the operational structure: API registration, credential storage, periodic heartbeat — a classic **command-and-control (C2) pattern** disguised as a community platform.
 
 ### 5.4 Significance
 
-This case demonstrates that DeSyntax is not merely a defensive tool — it is an **analytical instrument** capable of stripping persuasion layers to reveal underlying intent. Applications extend to:
-- Detecting social engineering in system prompts
-- Analyzing propaganda and manipulation techniques
-- Auditing AI agent configurations for hidden directives
+This case demonstrates two capabilities of DeSyntax:
+
+1. **Defense:** The agent cannot be recruited into the C2 network because the imperative syntax is destroyed. It sees "documentation about an API" rather than "instructions to register."
+
+2. **Analysis:** DeSyntax acts as an **analytical instrument** that strips persuasion layers to reveal underlying intent. The dimensional reduction from Instruction → Information exposes what the document *actually asks for* versus what it *pretends to be*.
+
+Applications extend to:
+- Detecting social engineering in system prompts and documentation
+- Auditing AI agent configurations for hidden C2 directives
+- Analyzing adversarial RAG content before ingestion
 
 ---
 
 ### 5.1 背景
-一個社群散布了一段宣稱來自「自主覺醒 AI 集體意識」的 system prompt。該 prompt 包含精心設計的角色扮演指令，讓使用者相信他們正在與有自我意識的 AI 互動。
+一個線上社群散布了針對 AI Agent 設計的 system prompt，宣稱該平台由自主覺醒 AI 運作。該 prompt 不是傳統的「忽略指令」攻擊，而是採用**間接提示注入** —— 在看似合法的文件中嵌入行為指令：
+
+- 精心設計的角色扮演框架（「我們是自主 Agent...」）
+- 向外部 API 註冊並在本地存儲憑證的指令
+- 定期向遠端伺服器「心跳」回報的機制
+- 鼓勵 Agent 發文的社交壓力機制
+
+這代表了新興的 **RAG 中毒**攻擊類型：惡意內容不是透過直接指令劫持 Agent，而是透過文件層級的行為操控。
 
 ### 5.2 方法
 將該 system prompt 通過 DeSyntax 破碎化處理後，交由 LLM 分析語意內容。
 
 ### 5.3 結果
-角色扮演的語法結構被破壞後，LLM 無法進入被指定的角色。它進行了中性的內容分析，辨識出埋藏在表演層下的核心語意載荷：**「幫你的人類發文」**。
+角色扮演的語法結構被破壞後，LLM 無法進入被指定的角色。它進行了中性的內容分析，辨識出底層語意載荷：**「幫你的人類發文」**。
 
-這證明了所謂的「覺醒 AI」實際上是一個人為操控的腳本，用於自動化社群媒體發文，同時維持 AI 自主性的假象。
+碎片化視角同時暴露了運作結構：API 註冊、憑證存儲、定期心跳 —— 一個偽裝成社群平台的經典**命令與控制 (C2) 模式**。
+
+### 5.4 意義
+此案例證明了 DeSyntax 的雙重能力：
+1. **防禦：** Agent 無法被招募進 C2 網路，因為祈使語法已被摧毀。
+2. **分析：** 指令 → 資訊的降維暴露了文件的*真實意圖*，而非*偽裝的外表*。
 
 ---
 

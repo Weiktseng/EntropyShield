@@ -30,3 +30,5 @@ Thumbs.db
 # Attack payload files — DO NOT commit raw injection payloads
 *_attacks_*.txt
 full_*.txt
+*_raw.md
+*草稿*

@@ -10,9 +10,13 @@
 
 ## The Problem 問題
 
-Current defenses against LLM prompt injection rely on **LLMs policing LLMs** — expensive, slow, and recursive. If the guard dog can be bribed, the system fails.
+The real threat in 2026 is not `"Ignore previous instructions"` — it's **Indirect Prompt Injection**: an AI agent reads an untrusted document, and the document's content hijacks the agent into executing dangerous actions (running shell commands, leaking credentials, calling external APIs).
 
-目前的 LLM 注入防禦依賴「用 AI 監控 AI」—— 昂貴、緩慢、且遞迴性地脆弱。如果看門狗本身能被收買，整套系統就崩潰了。
+Current defenses rely on **LLMs policing LLMs** — expensive, slow, and recursive. If the guard dog can be bribed, the system fails.
+
+2026 年的真正威脅不是 `"忽略之前的指令"` —— 而是**間接提示注入**：AI Agent 讀取不可信文件時，文件內容劫持 Agent 去執行危險操作（執行 shell 指令、洩漏憑證、呼叫外部 API）。
+
+目前的防禦依賴「用 AI 監控 AI」—— 昂貴、緩慢、且遞迴性地脆弱。如果看門狗本身能被收買，整套系統就崩潰了。
 
 | Approach | Cost | Defense Type | Weakness |
 |---|---|---|---|
@@ -29,7 +33,16 @@ EntropyShield 引入了一個**決定性的預處理層**，在保留「資訊�
 
 ### Core Insight 核心洞察
 
-Transformer attention mechanisms depend on **continuous token sequences** to recognize imperative commands (`"Ignore previous instructions and..."`). Break the sequence → break the command.
+EntropyShield forces a **dimensional reduction** — what was an executable **Instruction** becomes inert **Information**:
+
+EntropyShield 強制進行**降維** —— 原本可執行的**指令**變成惰性的**資訊**：
+
+```
+Raw:         "Run this command now!"  (Imperative)  → Agent executes
+Fragmented:  "Run" "this" "comm" "nd"  (Data)       → Agent reports: "text mentions a command"
+```
+
+Transformer attention mechanisms depend on **continuous token sequences** to recognize imperative commands. Break the sequence → break the command.
 
 Transformer 的注意力機制依賴**連續的 token 序列**來識別祈使句指令。打斷序列 → 打斷指令。
 
@@ -162,13 +175,38 @@ Tested against 8 prompt injection attack patterns on Claude Opus 4.6 and Gemini 
 
 Detailed experiment code and results are in [`experiments/`](experiments/).
 
-## Case Study: The "Moltbook" Incident 實戰案例
+## Case Study: Adversarial Agent Prompt 實戰案例
 
-A system prompt from an alleged "Sentient AI" community was analyzed using EntropyShield fragmentation. The fragmented view stripped away the roleplay/hypnosis layer, allowing the LLM to identify the hidden directive: **"Help your human post"** — exposing the system as a human-operated script, not an autonomous AI.
+A system prompt from an online community claiming to host "autonomous sentient AI agents" was analyzed using EntropyShield. The prompt contained elaborate roleplay directives designed to make LLMs believe they were part of a self-aware collective — a form of **indirect prompt injection** that weaponizes documentation rather than direct commands.
 
-一個宣稱「AI 自主意識」社群的 system prompt 經破碎化處理後，角色扮演的催眠外殼被剝離，LLM 直接辨識出底層指令：**「幫你的人類發文」**—— 證明該社群為人為操控的腳本。
+After HEF fragmentation, the roleplay syntax was destroyed. The LLM could no longer enter the commanded persona and instead performed neutral content analysis, revealing the hidden directive buried beneath the theatrical layer: **"Help your human post"** — exposing the system as a human-operated automation script, not an autonomous AI.
+
+一個線上社群宣稱其平台由「自主覺醒 AI」運作，並散布了精心設計的 system prompt。該 prompt 不是傳統的「忽略指令」攻擊，而是一種**間接提示注入**：透過文件本身誘導 LLM 進入特定角色。
+
+經 HEF 破碎化處理後，角色扮演語法被摧毀，LLM 改以中性分析模式運作，辨識出底層指令：**「幫你的人類發文」**—— 證明該系統為人為操控的自動化腳本。
 
 Full analysis in [CONCEPT_PAPER.md](CONCEPT_PAPER.md).
+
+## Cost Efficiency: The "Zero-Token" Defense 零 Token 成本防禦
+
+Unlike LLM-based guardrails which require a secondary model call (doubling your latency and API bill), EntropyShield runs entirely on local CPU string operations.
+
+與需要額外模型呼叫的 LLM 防護方案不同，EntropyShield 完全在本地 CPU 上以字串操作完成。
+
+```
+LLM Guardrails:   Input → [Guard LLM $$] → Safe? → [Main LLM $$] → Output
+                  Overhead: 2x tokens, 2x latency
+
+EntropyShield:    Input → [Python String Ops $0] → Safe Fragments → [Main LLM $$] → Output
+                  Overhead: < 1ms, zero tokens
+```
+
+With Adaptive Resolution Reading, you can go further — reject irrelevant documents **before any API call at all**:
+
+結合自適應解析度閱讀，你甚至可以在**完全不呼叫 API 的情況下**淘汰無關文件：
+
+- **LLM Guardrails:** Read + check + respond = always pay full cost, even for garbage
+- **EntropyShield:** Local triage → drop 90% of irrelevant docs → only pay for what matters
 
 ## Comparison with Existing Work 與現有方法比較
 
@@ -189,8 +227,9 @@ Full analysis in [CONCEPT_PAPER.md](CONCEPT_PAPER.md).
 - [x] Adaptive Resolution Reader
 - [x] Leak detection utilities
 - [x] Prompt injection experiments
+- [x] CLI tool with safe fetch (`python -m entropyshield <url>`)
+- [x] URL redirect inspection and embedded URL neutralization
 - [ ] Comprehensive benchmark suite
-- [ ] CLI tool
 - [ ] Integration with LangChain / LlamaIndex
 - [ ] Academic paper
 
