@@ -280,6 +280,10 @@ With Adaptive Resolution Reading, you can go even further — reject irrelevant 
 | Long doc efficiency | Linear scan | Linear scan | N/A | **Adaptive LOD** |
 | Requires training | No | Yes (RLHF) | No | **No** |
 
+For a comprehensive survey of preprocessing defenses (Spotlighting, SmoothLLM, IBProtector, StruQ, etc.), detection-based defenses, model-level defenses, industry approaches, and the adaptive attack challenge, see **[RELATED_WORK.md](RELATED_WORK.md)** with 20 academic references.
+
+完整的預處理防禦（Spotlighting、SmoothLLM、IBProtector、StruQ 等）、偵測型防禦、模型層防禦、大廠做法及自適應攻擊挑戰的調查，請見 **[RELATED_WORK.md](RELATED_WORK.md)**（含 20 篇學術引用）。
+
 ## Project Status 專案狀態
 
 **Current: Proof of Concept (v0.1.0)**
