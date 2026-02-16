@@ -17,6 +17,7 @@ venv/
 env/
 
 *.jsonl
+!experiments/deepset_results_*.jsonl
 results_*.json
 
 .DS_Store
