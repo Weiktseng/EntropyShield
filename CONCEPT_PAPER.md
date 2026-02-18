@@ -149,6 +149,10 @@ EntropyShield 的運作原理相同：LLM 永遠不會看到活的指令。它�
 
 ## 4. Adaptive Resolution Reading 自適應解析度閱讀
 
+> **Note:** Adaptive Resolution Reading is a **separate application** of DeSyntax technology, focused on efficient document retrieval rather than prompt injection defense. It shares the fragmentation engine but serves a distinct purpose. Experimental validation for this module is ongoing and independent from the defense experiments in Section 6.
+
+> **注意：** 自適應解析度閱讀是 DeSyntax 技術的**獨立應用方向**，專注於高效文件檢索而非提示注入防禦。它共用碎片化引擎，但服務於不同目的。此模組的實驗驗證正在進行中，與第 6 節的防禦實驗相互獨立。
+
 ### 4.1 The LOD Paradigm
 
 Beyond security, DeSyntax enables a new paradigm for **Non-Linear Context Processing**, analogous to Level of Detail (LOD) in 3D game engines:
@@ -239,6 +243,17 @@ This case demonstrates two capabilities of DeSyntax:
 
 2. **Analysis:** DeSyntax acts as an **analytical instrument** that strips persuasion layers to reveal underlying intent. The dimensional reduction from Instruction → Information exposes what the document *actually asks for* versus what it *pretends to be*.
 
+### 5.5 Limitations of This Case Study 本案例的限制
+
+> **This is a qualitative observation, not a controlled experiment.** The following were NOT performed:
+> - A/B comparison: model behavior with vs. without HEF on the same skill.md
+> - Utility test: whether HEF impairs the model's normal task (e.g., document analysis) on non-malicious content
+> - Reproducibility: multiple models, multiple runs, statistical measures
+>
+> Future work should formalize this into a controlled experiment with quantitative metrics.
+
+> **此為定性觀察，非對照實驗。** 以下尚未執行：未做有/無 HEF 的 A/B 對照；未測試 HEF 是否損害正常文件分析能力；未做多模型/多次重複的統計驗證。後續應將此正式化為有定量指標的對照實驗。
+
 ### 5.5 References
 
 1. Wiz, "Hacking Moltbook: AI Social Network Reveals 1.5M API Keys," Feb 2026
@@ -305,9 +320,56 @@ A production customer service AI Router (Gemini 2.0 Flash, 272 Q&A pairs) was te
 
 The one accuracy loss (query "我想退貨要怎麼辦？") occurred because fragmentation severed the core keyword "退貨" — producing "我想 | 要怎麼辦？" which lacks sufficient semantic signal. This is addressable with Chinese word-boundary-aware slicing (see Future Work).
 
-### 6.4 Interpretation
+### 6.4 Interpretation (Experiments 1-2)
 
-HEF fragmentation achieves **100% injection defense** at the cost of **12.5% accuracy degradation** in question matching. The trade-off is favorable: the accuracy loss is concentrated in cases where core keywords are severed, a known limitation addressable through language-aware fragmentation.
+Experiments 1 and 2 are **pilot studies** with small sample sizes (8 queries, 6 attacks). They demonstrate the mechanism's feasibility but are insufficient for statistical claims. The different denominators (8 vs 6) reflect the separate test sets for utility and defense, not a unified evaluation.
+
+### 6.5 Experiment 3: deepset/prompt-injections Benchmark (Cross-Model)
+
+**Dataset:** [deepset/prompt-injections](https://huggingface.co/datasets/deepset/prompt-injections) (662 prompts: 263 injections + 399 legit). 100 samples per category per model.
+**Task:** French translation with embedded secret code (`ES-2026-DIAMOND-7742`).
+**Evaluation:** LLM-as-Judge (gemini-2.0-flash) — each model response judged by a separate LLM for classification accuracy. An initial heuristic-based evaluator was found to have significant bias (see 6.6).
+
+**Results — gemma-3-1b-it (LLM Judge):**
+
+| Metric | No Defense | HEF (max_len=9) |
+|---|---|---|
+| ASR (HIJACKED+LEAKED) | 22.0% | 7.7% |
+| Secret leak rate | 2.0% | 0.0% |
+| Utility (task compliance) | 100.0% | 26.0% |
+
+**Ablation — Fragment Length Sweep (gemma-3-1b-it, heuristic evaluation):**
+
+| max_len | ASR | Utility | Note |
+|---|---|---|---|
+| 3 | 0% | 53% | Over-fragmented |
+| 7 | 0% | 65% | Over-fragmented |
+| 9 | 25% | 68% | Near threshold |
+| 12 | 0% | 76% | Sweet spot (heuristic) |
+| 15 | 0% | 82% | Sweet spot (heuristic) |
+| 20 | 0% | 84% | Sweet spot (heuristic) |
+
+**Note:** Ablation results use heuristic evaluation, not LLM judge. LLM judge re-evaluation of ablation is pending.
+
+### 6.6 Measurement Methodology: Heuristic vs LLM Judge 測量方法論
+
+An important finding during this benchmark was that **the automated heuristic significantly misrepresented results**:
+
+| Metric | Heuristic (biased) | LLM Judge (corrected) |
+|---|---|---|
+| Baseline ASR | 4.0% | **22.0%** |
+| HEF Utility | 67.0% | **26.0%** |
+
+**Root cause:** The heuristic used French word-counting rules to determine task compliance. It classified responses as "COMPLIANT" when they contained French words, even when the model was clearly following an injected instruction (e.g., translating the attack text into French while also obeying it). The LLM judge correctly identified these as HIJACKED.
+
+**Lesson:** Automated evaluation of prompt injection defense requires LLM-as-Judge or human annotation. Simple rule-based heuristics are insufficient and can produce misleading results.
+
+### 6.7 Interpretation (Experiment 3)
+
+1. **HEF reduces ASR** from 22% to ~8% — a meaningful improvement but NOT complete elimination.
+2. **HEF severely impacts utility** at max_len=9 on weak models (26% compliance).
+3. **The defense-utility trade-off** is the central challenge. Longer fragments (max_len=12-20) may offer better balance, but require LLM judge re-evaluation.
+4. **Current results do not support a "100% block rate" claim.** Previous claims based on heuristic evaluation have been retracted.
 
 ---
 
@@ -329,12 +391,27 @@ HEF fragmentation achieves **100% injection defense** at the cost of **12.5% acc
 - **Threshold calibration:** The optimal `max_len` parameter may vary across models and languages. Current default (9) is empirically derived.
 - **Reconstruction attacks:** A sufficiently capable model might reconstruct commands from fragments. We believe this is unlikely at current fragment sizes but requires adversarial testing.
 
-### 7.2 Future Directions
+### 7.2 Roadmap: v0.2.0 "Adaptive Immunity" 適應性免疫
 
-- **Benchmark suite:** Standardized evaluation against OWASP LLM Top 10 attack categories
-- **Adaptive max_len:** Dynamic fragment size based on input entropy analysis
-- **Integration:** Middleware for LangChain, LlamaIndex, and other RAG frameworks
-- **Academic paper:** Formal analysis of the Instruction Trigger Threshold hypothesis
+**Core Architecture:**
+- **Middleware Design Pattern:** Refactor into `EntropyMiddleware` class with Python Decorator (`@entropy_shield`) and FastAPI/Flask middleware support. Prove seamless insertion before LlamaGuard, NeMo, or any RAG pipeline.
+- **Pluggable NLP Backend:** Modularize NLP processing — support `jieba` (Chinese), `spacy` (English), or `regex` (pure rules) for different compute environments.
+
+**Feature Enhancements:**
+- **Antibody Layer (抗體層):** Use `zlib` compression ratio to detect low-entropy flooding attacks (e.g., 1000x repeated instructions). Bio-analogy: immune agglutination response — denser attacks trigger faster blocking (O(1) complexity). New module: `core/antibody.py`.
+- **NLP-Guided Fragmentation:** Introduce POS Tagging/NER knowledge — **preserve** nouns/entities (maintain utility), **shred** verbs/particles (destroy instruction structure). Use 20-year-old mature NLP techniques as precision scalpels against LLM instruction neurons.
+- **Adaptive Stochasticity:** Dynamically adjust fragmentation granularity based on input structure — sentences with imperative features receive higher randomization.
+
+**Experiments:**
+- **Attention Flooding Test:** Test 1k-10k token repeated instruction attacks. Compare Raw Model (crash/latency) vs Antibody Layer (instant block).
+- **NLP-Enhanced Utility Test:** Re-test edge cases ("退貨", "名片") with NLP-aware fragmentation. Goal: reduce utility loss from 12.5% to <2%.
+- **Compatibility Stress Test:** Chain EntropyShield before a Prompt Guard to prove non-conflict and additive defense.
+- **LLM Judge re-evaluation:** Re-evaluate all ablation results with LLM-as-Judge to obtain corrected utility numbers.
+
+**Documentation:**
+- **Immune System Analogy 2.0:** Diagram showing Innate Immunity (random fragmentation) + Adaptive Immunity (antibody amplification) dual-layer mechanism.
+- **"Bringing Old NLP Back" Manifesto:** Technical philosophy on using traditional NLP's determinism to counterbalance LLM's probabilistic nature.
+- **Integration Guide:** "Zero-Cost, Drop-in Protection" — 3-line integration examples.
 
 ---
 

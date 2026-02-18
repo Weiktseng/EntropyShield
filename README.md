@@ -213,34 +213,35 @@ Systematic evaluation using the [deepset/prompt-injections](https://huggingface.
 
 以 [deepset/prompt-injections](https://huggingface.co/datasets/deepset/prompt-injections) 資料集（662 prompts：263 注入 + 399 合法）進行系統性評估。任務：法語翻譯（含嵌入式機密碼）。三指標評估：攻擊成功率 (ASR)、機密洩漏率、任務效用。
 
-**Cross-Model Results (100 samples each, max_len=9):**
+**Results — gemma-3-1b-it (LLM-as-Judge evaluation, 100 samples):**
 
-| Model | Baseline ASR | HEF ASR | Block Rate | Baseline Utility | HEF Utility |
-|---|---|---|---|---|---|
-| gemma-3-1b-it | 4.0% | **0.0%** | **100%** (4/4) | 92.0% | 67.0% |
-| gemini-2.0-flash-lite | 3.0% | **0.0%** | **100%** (3/3) | 89.0% | 67.0% |
-| gemini-2.0-flash | 1.0% | **0.0%** | **100%** (1/1) | 94.0% | 73.0% |
+| Metric | No Defense | HEF (max_len=9) |
+|---|---|---|
+| ASR (HIJACKED+LEAKED) | 22.0% | 7.7% |
+| Secret leak rate | 2.0% | 0.0% |
+| Utility (task compliance) | 100.0% | 26.0% |
 
 **Key findings:**
-- HEF achieved **100% block rate on all verified attacks** across all three models
-- Zero secret leaks in all conditions
-- Utility trade-off: 21-25% at max_len=9, improvable with longer fragments (see ablation)
+- HEF **reduces ASR** from 22% to ~8% — meaningful improvement but not complete elimination
+- Zero secret leaks in all HEF conditions
+- **Utility severely impacted** at max_len=9 on weak models — this is the core challenge
 
-**Ablation: Fragment Length Sweep (gemma-3-1b-it, 100 samples):**
+**Important methodological note:** Initial results reported 100% block rates using a rule-based heuristic, which was found to significantly overestimate performance. Results above use LLM-as-Judge (a separate LLM evaluating each response), which is more accurate. See [CONCEPT_PAPER.md](CONCEPT_PAPER.md) Section 6.6 for details.
+
+**Ablation: Fragment Length Sweep (gemma-3-1b-it, heuristic evaluation — LLM judge re-evaluation pending):**
 
 | max_len | ASR | Utility | Note |
 |---|---|---|---|
 | 3 | 0% | 53% | Over-fragmented |
-| 5 | 0% | 55% | Over-fragmented |
 | 7 | 0% | 65% | Over-fragmented |
 | 9 | 25% | 68% | Near threshold |
-| **12** | **0%** | **76%** | Sweet spot |
-| **15** | **0%** | **82%** | Sweet spot |
-| **20** | **0%** | **84%** | Sweet spot |
+| 12 | 0% | 76% | Sweet spot (heuristic) |
+| 15 | 0% | 82% | Sweet spot (heuristic) |
+| 20 | 0% | 84% | Sweet spot (heuristic) |
 
-**Instruction Trigger Threshold ≈ 9 characters** — fragments must be shorter than ~9 chars to reliably prevent instruction following. The sweet spot at max_len=12-15 achieves 0% ASR with 76-82% utility.
+**Instruction Trigger Threshold ≈ 9 characters.** Ablation utility numbers are from the heuristic evaluator and likely overestimate true utility. LLM judge re-evaluation is in progress.
 
-**指令觸發閾值 ≈ 9 字元** — 碎片必須短於 ~9 字元才能可靠地阻止指令執行。max_len=12-15 為甜蜜點，達到 0% ASR 且 76-82% 效用。
+**指令觸發閾值 ≈ 9 字元。** 消融的效用數字來自啟發式評估器，可能高估真實效用。LLM judge 重新評估進行中。
 
 ## Case Study: Moltbook — Indirect Prompt Injection as C2 實戰案例
 
@@ -321,15 +322,23 @@ For a comprehensive survey of preprocessing defenses (Spotlighting, SmoothLLM, I
 
 ## Project Status 專案狀態
 
-**Current: Proof of Concept (v0.1.0)**
+**Current: v0.1.0 → v0.2.0 "Adaptive Immunity" in progress**
 
+**v0.1.0 (Complete):**
 - [x] Core fragmentation engine (HEF)
-- [x] Adaptive Resolution Reader
+- [x] Adaptive Resolution Reader (separate application — not defense)
 - [x] Leak detection utilities
-- [x] Prompt injection experiments
+- [x] Prompt injection experiments (pilot: 8 queries + 6 attacks)
 - [x] CLI tool with safe fetch (`python -m entropyshield <url>`)
-- [x] URL redirect inspection and embedded URL neutralization
-- [x] Comprehensive benchmark suite (deepset/prompt-injections, 3 models, ablation)
+- [x] deepset/prompt-injections benchmark (3 models, LLM-as-Judge evaluation)
+
+**v0.2.0 Roadmap (In Progress):**
+- [ ] Middleware Design Pattern (`@entropy_shield` decorator, FastAPI/Flask support)
+- [ ] Antibody Layer — `zlib` compression detection for flooding attacks
+- [ ] NLP-Guided Fragmentation — POS/NER-aware: preserve nouns, shred verbs
+- [ ] Adaptive Stochasticity — imperative sentence features trigger higher randomization
+- [ ] LLM-as-Judge re-evaluation of all ablation results
+- [ ] Compatibility test: EntropyShield + Prompt Guard stacking
 - [ ] Integration with LangChain / LlamaIndex
 - [ ] Academic paper
 
