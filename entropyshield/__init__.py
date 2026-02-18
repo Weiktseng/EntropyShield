@@ -14,6 +14,7 @@ from .fragmenter import (
     fragment_text,
     sanitize_delimiters,
     hef_pipeline,
+    HEF_HEADER,
 )
 from .entropy_harvester import (
     ConversationalEntropyHarvester,
@@ -28,6 +29,7 @@ __all__ = [
     "fragment_text",
     "sanitize_delimiters",
     "hef_pipeline",
+    "HEF_HEADER",
     "ConversationalEntropyHarvester",
     "make_seed",
     "AdaptiveReader",
