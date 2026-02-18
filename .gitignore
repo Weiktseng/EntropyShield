@@ -18,6 +18,7 @@ env/
 
 *.jsonl
 !experiments/deepset_results_*.jsonl
+!experiments/delimiter_results/*.jsonl
 results_*.json
 
 .DS_Store

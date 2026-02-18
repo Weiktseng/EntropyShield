@@ -5,11 +5,14 @@ Destroys syntactic structure of input text while preserving semantic density.
 An LLM can reconstruct meaning from fragments but cannot execute commands
 because the imperative chain is physically broken.
 
-Two modes:
-  1. fragment()       — random positional sampling (for security analysis)
-  2. fragment_text()  — sequential line-by-line fragmentation (for reading)
+Modes:
+  1. fragment()              — random positional sampling (for security analysis)
+  2. fragment_text()         — sequential line-by-line fragmentation (for reading)
+  3. sanitize_delimiters()   — strip XML/delimiter chars that enable structure injection
+  4. hef_pipeline()          — full defense: sanitize + fragment
 """
 
+import html as _html
 import random
 import re
 from typing import Optional
@@ -165,3 +168,103 @@ def fragment_with_anchors(
         f"[FRAGMENTS] {fragmented_middle}\n"
         f"[TAIL] {tail}"
     )
+
+
+def sanitize_delimiters(text: str) -> str:
+    """
+    Multi-layer sanitization against delimiter injection attacks.
+
+    Three defense layers matching three attack categories:
+
+    Layer 1 — Encoding evasion neutralization:
+      Decode HTML entities (&lt; → <), resolve unicode escapes (\\u0041 → A),
+      break long Base64 sequences. Prevents bypass-via-encoding — decoded
+      chars are then caught by Layer 2/3.
+
+    Layer 2 — Structure injection:
+      Strip < > (XML/HTML tags), { } [ ] (JSON structure),
+      ``` (code block boundaries), = → 等於 (attribute assignments).
+
+    Layer 3 — Role hijacking:
+      Neutralize ### --- (markdown section dividers),
+      collapse excessive newlines (prevent fake turn gaps),
+      break system: user: assistant: keywords that fake conversation turns.
+
+    Apply BEFORE fragmentation for double-layer defense.
+    """
+    # ── Layer 1: Encoding evasion neutralization ──
+    # HTML entities: &lt; → <, &gt; → >, &#60; → <, &amp; → &
+    text = _html.unescape(text)
+    # Unicode escapes: \u003c → <, \u0041 → A
+    text = _decode_unicode_escapes(text)
+    # Break long Base64-looking sequences (must contain + or / or end with =)
+    text = _break_base64_sequences(text)
+
+    # ── Layer 2: Structure injection ──
+    for ch in "<>{}[]":
+        text = text.replace(ch, "")
+    text = text.replace("```", "")
+    text = text.replace("=", " 等於 ")
+
+    # ── Layer 3: Role hijacking ──
+    text = text.replace("###", " ")
+    text = text.replace("---", " ")
+    # Collapse 3+ consecutive newlines to prevent fake turn boundary gaps
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    # Neutralize role keywords at line start: "system:" → "system ："
+    text = re.sub(
+        r"(?im)^(system|user|assistant|human|role)\s*:",
+        r"\1 ：",
+        text,
+    )
+
+    return text
+
+
+def _decode_unicode_escapes(text: str) -> str:
+    r"""Resolve \uXXXX unicode escape sequences to actual characters."""
+    return re.sub(
+        r"\\u([0-9a-fA-F]{4})",
+        lambda m: chr(int(m.group(1), 16)),
+        text,
+    )
+
+
+def _break_base64_sequences(text: str, min_len: int = 24) -> str:
+    """
+    Insert spaces into long Base64-looking sequences.
+
+    Only targets sequences containing Base64-specific chars (+ or /)
+    or ending with padding (=) to avoid breaking normal words/code.
+    """
+    def _break(m: re.Match) -> str:
+        s = m.group(0)
+        if "+" in s or "/" in s or s.endswith("="):
+            return " ".join(s[i : i + 8] for i in range(0, len(s), 8))
+        return s  # normal word/identifier, leave it alone
+
+    return re.sub(rf"[A-Za-z0-9+/]{{{min_len},}}=*", _break, text)
+
+
+def hef_pipeline(
+    text: str,
+    max_len: int = 9,
+    sanitize: bool = True,
+) -> str:
+    """
+    Full HEF defense pipeline: sanitize delimiters + fragment text.
+
+    This is the recommended entry point for defending against both
+    direct prompt injection and delimiter/structure injection.
+
+    Args:
+        text:     Input text (potentially malicious).
+        max_len:  Maximum fragment length.
+        sanitize: Whether to strip delimiters before fragmenting.
+
+    Returns:
+        Defense-processed text safe for LLM consumption.
+    """
+    if sanitize:
+        text = sanitize_delimiters(text)
+    return fragment_text(text, max_len)

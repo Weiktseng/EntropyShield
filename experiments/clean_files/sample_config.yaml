@@ -1,0 +1,31 @@
+# Application configuration
+app:
+  name: "DataPipeline"
+  version: "2.1.0"
+  environment: production
+
+database:
+  host: localhost
+  port: 5432
+  name: app_db
+  pool_size: 10
+  timeout: 30
+
+logging:
+  level: INFO
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  handlers:
+    - type: file
+      path: /var/log/app/pipeline.log
+      rotation: daily
+    - type: console
+
+api:
+  rate_limit: 100
+  timeout: 15
+  retry_count: 3
+  endpoints:
+    - path: /api/v1/process
+      method: POST
+    - path: /api/v1/status
+      method: GET
