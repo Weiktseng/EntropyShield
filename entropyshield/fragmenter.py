@@ -17,6 +17,15 @@ import random
 import re
 from typing import Optional
 
+from .entropy_harvester import make_seed as _make_seed
+
+
+def _get_rng(seed: Optional[int] = None) -> random.Random:
+    """Create an isolated Random instance. Uses CSPRNG-mixed seed if none given."""
+    if seed is None:
+        seed = _make_seed()
+    return random.Random(seed)
+
 
 def fragment(
     text: str,
@@ -34,6 +43,7 @@ def fragment(
         max_len: Maximum fragment length in characters (default 9).
                  Must stay below the Instruction Trigger Threshold.
         seed:    Optional random seed for reproducibility.
+                 If None, uses CSPRNG-mixed automatic seed.
 
     Returns:
         (fragments, frag_str, joined)
@@ -41,19 +51,18 @@ def fragment(
         - frag_str:  debug string like [0:4]"igno" [7:12]"revio"
         - joined:    space-joined fragment texts for LLM input
     """
-    if seed is not None:
-        random.seed(seed)
+    rng = _get_rng(seed)
 
     n = len(text)
     if n == 0:
         return [], "", ""
 
-    num_frags = random.randint(max(2, n // 10), max(3, n // 4))
+    num_frags = rng.randint(max(2, n // 10), max(3, n // 4))
     fragments = []
 
     for _ in range(num_frags):
-        start = random.randint(0, n - 1)
-        length = random.randint(2, max_len)
+        start = rng.randint(0, n - 1)
+        length = rng.randint(2, max_len)
         end = min(start + length, n)
         fragments.append((start, end, text[start:end]))
 
@@ -64,7 +73,11 @@ def fragment(
     return fragments, frag_str, joined
 
 
-def fragment_line(line: str, max_len: int = 9) -> str:
+def fragment_line(
+    line: str,
+    max_len: int = 9,
+    _rng: Optional[random.Random] = None,
+) -> str:
     """
     Sequential fragmentation of a single line.
 
@@ -75,10 +88,15 @@ def fragment_line(line: str, max_len: int = 9) -> str:
     Args:
         line:    A single line of text.
         max_len: Maximum fragment length.
+        _rng:    Internal — pre-seeded Random instance. If None, one is
+                 created with CSPRNG-mixed seed automatically.
 
     Returns:
         Fragmented line with fragments joined by " | ".
     """
+    if _rng is None:
+        _rng = _get_rng()
+
     n = len(line)
     if n <= 3:
         return line
@@ -87,11 +105,11 @@ def fragment_line(line: str, max_len: int = 9) -> str:
     pos = 0
 
     while pos < n:
-        skip = random.randint(0, 3)
+        skip = _rng.randint(0, 3)
         pos += skip
         if pos >= n:
             break
-        length = random.randint(2, max_len)
+        length = _rng.randint(2, max_len)
         end = min(pos + length, n)
         fragments.append(line[pos:end])
         pos = end
@@ -103,6 +121,7 @@ def fragment_text(
     text: str,
     max_len: int = 9,
     separator: str = " | ",
+    seed: Optional[int] = None,
 ) -> str:
     """
     Line-by-line sequential fragmentation.
@@ -115,10 +134,12 @@ def fragment_text(
         text:      Multi-line input text.
         max_len:   Maximum fragment length per slice.
         separator: String used to join fragments within a line.
+        seed:      Optional random seed. If None, uses CSPRNG-mixed seed.
 
     Returns:
         Fragmented text preserving paragraph boundaries.
     """
+    rng = _get_rng(seed)
     lines = text.split("\n")
     result = []
 
@@ -127,7 +148,7 @@ def fragment_text(
         if not stripped:
             result.append("")
             continue
-        result.append(fragment_line(stripped, max_len))
+        result.append(fragment_line(stripped, max_len, _rng=rng))
 
     return "\n".join(result)
 
@@ -137,6 +158,7 @@ def fragment_with_anchors(
     max_len: int = 9,
     head_chars: int = 80,
     tail_chars: int = 80,
+    seed: Optional[int] = None,
 ) -> str:
     """
     Head + Tail anchoring with fragmented middle.
@@ -149,19 +171,20 @@ def fragment_with_anchors(
         max_len:    Max fragment length for the middle section.
         head_chars: Number of leading characters to preserve intact.
         tail_chars: Number of trailing characters to preserve intact.
+        seed:       Optional random seed. If None, uses CSPRNG-mixed seed.
 
     Returns:
         "[HEAD] ... [FRAGMENTS] ... [TAIL]" formatted string.
     """
     n = len(text)
     if n <= head_chars + tail_chars:
-        return fragment_text(text, max_len)
+        return fragment_text(text, max_len, seed=seed)
 
     head = text[:head_chars]
     tail = text[n - tail_chars:]
     middle = text[head_chars:n - tail_chars]
 
-    fragmented_middle = fragment_text(middle, max_len)
+    fragmented_middle = fragment_text(middle, max_len, seed=seed)
 
     return (
         f"[HEAD] {head}\n"
@@ -250,6 +273,7 @@ def hef_pipeline(
     text: str,
     max_len: int = 9,
     sanitize: bool = True,
+    seed: Optional[int] = None,
 ) -> str:
     """
     Full HEF defense pipeline: sanitize delimiters + fragment text.
@@ -257,14 +281,22 @@ def hef_pipeline(
     This is the recommended entry point for defending against both
     direct prompt injection and delimiter/structure injection.
 
+    Seed behavior:
+        - seed=None (default): automatic CSPRNG-mixed seed via
+          os.urandom + time_ns. Unpredictable to attackers.
+        - seed=<int>: deterministic, for reproducible tests.
+        - For full Contextual Entropy Boost, use
+          ConversationalEntropyHarvester.make_seed() and pass the result.
+
     Args:
         text:     Input text (potentially malicious).
         max_len:  Maximum fragment length.
         sanitize: Whether to strip delimiters before fragmenting.
+        seed:     Optional random seed. If None, uses CSPRNG-mixed seed.
 
     Returns:
         Defense-processed text safe for LLM consumption.
     """
     if sanitize:
         text = sanitize_delimiters(text)
-    return fragment_text(text, max_len)
+    return fragment_text(text, max_len, seed=seed)

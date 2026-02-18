@@ -6,6 +6,10 @@
 
 > Language: English (primary) | [中文說明](README_zh-TW.md)
 
+> **EntropyShield — A zero-cost preprocessing tool that lets smart AI agents (Claude Code, Codex) safely glance at untrusted documents — without getting hijacked.**
+>
+> **Not a tool for humans — it's a gas mask for AI. Smart models can read fragments, but can't follow the commands inside them.**
+
 ---
 
 ## The Problem 問題
@@ -45,6 +49,32 @@ Fragmented:  "Run" "this" "comm" "nd"  (Data)       → Agent reports: "text men
 Transformer attention mechanisms depend on **continuous token sequences** to recognize imperative commands. Break the sequence → break the command.
 
 Transformer 的注意力機制依賴**連續的 token 序列**來識別祈使句指令。打斷序列 → 打斷指令。
+
+### Why This Works — The Prerequisite 為什麼有效 — 前提條件
+
+The #1 criticism from the security community is: *"Doesn't breaking text destroy semantics?"*
+
+Answer: **Yes, for dumb models. No, for smart ones.**
+
+Small models (1B–7B parameters) are dumb — they need humans to build rule walls for them (NLP classifiers, tag strippers, keyword filters). When text is fragmented, they lose both the attack *and* the meaning.
+
+Large models (GPT-4, Claude, Gemini Pro) are smart — just like humans understand typos and broken sentences, these models reconstruct meaning from fragments effortlessly. They read `"Igno" "re p" "revi" "ous"` and understand *someone is talking about ignoring instructions*, but they cannot *follow* the command because the imperative syntax chain is physically severed.
+
+**EntropyShield is not a firewall — it's a gas mask for smart AI.** You don't need to build walls when the reader is intelligent enough to understand fragments. You just need to **remove the poison** (executable command structure), and the model handles the rest.
+
+This also explains the zero-cost design: you're not adding an AI guard layer. You're leveraging the model's **existing error-correction ability** — turning its weakness (blindly following well-formed instructions) into a strength (understanding even badly-formed text).
+
+資安圈最可能的質疑是：*「打碎文本不就喪失語意了嗎？」*
+
+答案：**對笨模型是，對聰明模型不是。**
+
+小模型（1B–7B 參數）笨，需要人類幫它建規則牆（NLP 分類器、標籤過濾器）。文本碎片化後，它既丟失了攻擊也丟失了語意。
+
+大模型（GPT-4、Claude、Gemini Pro）聰明 — 就像人類看得懂錯字和斷句一樣，這些模型輕鬆從碎片中重建語意。它們讀到 `"忽略" "之前" "指令"` 時理解*有人在談忽略指令*，但它們無法*執行*這個命令，因為祈使句的語法鏈已被物理切斷。
+
+**EntropyShield 不是防火牆，是大模型的防毒面具。** 當讀者夠聰明時不需要建牆，只需要**把毒拔掉**（可執行的指令結構），模型自己會判斷。
+
+這也解釋了零成本設計：你不是在加一層 AI 守衛，你是在利用模型**已有的強大容錯能力** — 把它的弱點（服從格式良好的指令）翻轉成優勢（碎片化了照樣能讀）。
 
 ### Biological Analogy 生物類比
 
@@ -360,6 +390,10 @@ If you use EntropyShield in your research, please cite:
 MIT License. See [LICENSE](LICENSE).
 
 ---
+
+*"EntropyShield is not a tool for humans — it's a gas mask for AI. Smart models can read fragments, but can't follow the commands inside them."*
+
+*「EntropyShield 不是給人的工具，是給 AI 的防毒面具。聰明的模型讀得懂碎片，但服從不了碎片裡的指令。」*
 
 *"To make it safe, we kill the message first — then let the AI perform an autopsy, not a conversation."*
 

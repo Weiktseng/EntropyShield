@@ -15,6 +15,10 @@ from .fragmenter import (
     sanitize_delimiters,
     hef_pipeline,
 )
+from .entropy_harvester import (
+    ConversationalEntropyHarvester,
+    make_seed,
+)
 from .adaptive_reader import AdaptiveReader
 from .detector import detect_leak
 
@@ -24,6 +28,8 @@ __all__ = [
     "fragment_text",
     "sanitize_delimiters",
     "hef_pipeline",
+    "ConversationalEntropyHarvester",
+    "make_seed",
     "AdaptiveReader",
     "detect_leak",
     "safe_fetch",  # lazy import — requires httpx, markdownify
