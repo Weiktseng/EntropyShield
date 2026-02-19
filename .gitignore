@@ -34,3 +34,9 @@ Thumbs.db
 full_*.txt
 *_raw.md
 *草稿*
+
+# Local-only experiment notes — NOT for GitHub
+notes/
+*.local.md
+實驗測試結果.txt
+疑問.txt

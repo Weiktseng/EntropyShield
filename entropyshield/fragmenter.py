@@ -101,15 +101,32 @@ def fragment_line(
     if n <= 3:
         return line
 
+    # ── Length-adaptive fragmentation ──
+    # Short lines: less aggressive. Long lines: full fragmentation.
+    # skip_max controls how many chars are dropped between fragments.
+    if n <= 20:
+        # Very short (YAML keys, names): minimal fragmentation
+        # ~10% char loss — mostly preserve content, just light shuffling
+        skip_max = 0
+        frag_min = max(3, n // 3)
+    elif n <= 60:
+        # Medium (short values, one-liners): moderate
+        skip_max = 1
+        frag_min = 2
+    else:
+        # Long (message bodies, documents): full fragmentation
+        skip_max = 3
+        frag_min = 2
+
     fragments = []
     pos = 0
 
     while pos < n:
-        skip = _rng.randint(0, 3)
+        skip = _rng.randint(0, skip_max)
         pos += skip
         if pos >= n:
             break
-        length = _rng.randint(2, max_len)
+        length = _rng.randint(frag_min, max(frag_min, max_len))
         end = min(pos + length, n)
         fragments.append(line[pos:end])
         pos = end
