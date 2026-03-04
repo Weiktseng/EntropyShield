@@ -29,7 +29,7 @@ def _create_server():
     # Try to use the mcp SDK if available
     try:
         from mcp.server import Server
-        from mcp.server.stdio import run_server
+        from mcp.server.stdio import stdio_server
         import mcp.types as types
     except ImportError:
         return None, None
@@ -183,7 +183,12 @@ def _create_server():
             text=f"[EntropyShield] Unknown tool: {name}",
         )]
 
-    return server, run_server
+    async def run():
+        async with stdio_server() as (read_stream, write_stream):
+            init_options = server.create_initialization_options()
+            await server.run(read_stream, write_stream, init_options)
+
+    return server, run
 
 
 def _run_stdio_fallback():
@@ -251,6 +256,17 @@ def _run_stdio_fallback():
                                 "required": ["file_path"],
                             },
                         },
+                        {
+                            "name": "shield_fetch",
+                            "description": "Fetch a URL and return shielded content",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "url": {"type": "string", "description": "URL to fetch"},
+                                },
+                                "required": ["url"],
+                            },
+                        },
                     ]
                 },
             }
@@ -269,6 +285,23 @@ def _run_stdio_fallback():
                     result_text = shield(content)
                 except OSError as e:
                     result_text = f"[Error] {e}"
+            elif tool_name == "shield_fetch":
+                url = args.get("url", "")
+                if not url:
+                    result_text = "[EntropyShield] Error: no URL provided"
+                else:
+                    try:
+                        from .safe_fetch import safe_fetch
+                        report = safe_fetch(url)
+                        parts = []
+                        if report.warnings:
+                            parts.append("[Warnings]\n" + "\n".join(f"  - {w}" for w in report.warnings))
+                        if report.suspicious_urls:
+                            parts.append("[Suspicious URLs]\n" + "\n".join(f"  - {u}" for u in report.suspicious_urls[:5]))
+                        parts.append(report.fragmented_content or "[empty]")
+                        result_text = "\n\n".join(parts)
+                    except Exception as e:
+                        result_text = f"[EntropyShield] Fetch error: {e}"
             else:
                 result_text = f"[Unknown tool: {tool_name}]"
 
@@ -294,11 +327,11 @@ def _run_stdio_fallback():
 
 def main():
     """Entry point for MCP server."""
-    server, run_server = _create_server()
+    server, run = _create_server()
 
     if server is not None:
         import asyncio
-        asyncio.run(run_server(server))
+        asyncio.run(run())
     else:
         _run_stdio_fallback()
 
