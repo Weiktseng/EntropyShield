@@ -22,8 +22,11 @@ from .entropy_harvester import (
 )
 from .adaptive_reader import AdaptiveReader
 from .detector import detect_leak
+from .shield import shield, shield_with_stats
 
 __all__ = [
+    "shield",
+    "shield_with_stats",
     "fragment",
     "fragment_line",
     "fragment_text",

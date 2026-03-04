@@ -36,7 +36,9 @@ classifiers = [
 
 [project.optional-dependencies]
 fetch = ["httpx>=0.25", "markdownify>=0.12"]
-dev = ["pytest>=7.0", "httpx>=0.25", "markdownify>=0.12"]
+mcp = ["mcp>=1.0"]
+all = ["httpx>=0.25", "markdownify>=0.12", "mcp>=1.0"]
+dev = ["pytest>=7.0", "httpx>=0.25", "markdownify>=0.12", "mcp>=1.0"]
 
 [project.urls]
 Homepage = "https://github.com/Weiktseng/EntropyShield"
@@ -45,6 +47,7 @@ Issues = "https://github.com/Weiktseng/EntropyShield/issues"
 
 [project.scripts]
 entropyshield = "entropyshield.__main__:main"
+entropyshield-mcp = "entropyshield.mcp_server:main"
 
 [tool.setuptools.packages.find]
 include = ["entropyshield*"]
