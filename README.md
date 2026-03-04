@@ -99,14 +99,20 @@ entropyshield --mcp
 ### MCP Server (for AI CLIs)
 
 ```bash
-# Add to Claude Code
-claude mcp add entropyshield -- python -m entropyshield --mcp
+# One-command setup: installs MCP server + auto-approve permissions
+python -m entropyshield --setup
 
-# Now your AI has 3 safety tools:
-#   shield_text  — Shield arbitrary text
-#   shield_read  — Read a file through EntropyShield
-#   shield_fetch — Fetch a URL through EntropyShield
+# Or manually:
+claude mcp add entropyshield -- python -m entropyshield --mcp
 ```
+
+After setup, your AI has 3 safety tools that run automatically (no permission prompts):
+
+| Tool | Function |
+|------|----------|
+| `shield_text` | Shield arbitrary text |
+| `shield_read` | Read a file through EntropyShield |
+| `shield_fetch` | Fetch a URL through EntropyShield |
 
 <br>
 

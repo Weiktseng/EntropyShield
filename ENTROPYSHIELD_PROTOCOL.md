@@ -53,8 +53,26 @@ Based on the shielded result, determine whether the source is safe:
 # Install
 pip install entropyshield
 
-# Add to Claude Code as MCP server
-claude mcp add entropyshield -- python -m entropyshield.mcp_server
+# One-command setup: adds MCP server + auto-approve permissions globally
+python -m entropyshield --setup
+```
+
+This writes `mcp__entropyshield__*` to `~/.claude/settings.local.json`, so the shield tools run automatically in **any** project directory without permission prompts.
+
+### Manual setup (alternative)
+
+```bash
+claude mcp add entropyshield -- python -m entropyshield --mcp
+```
+
+Then add to `~/.claude/settings.local.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["mcp__entropyshield__*"]
+  }
+}
 ```
 
 ## How It Works
