@@ -1,0 +1,4 @@
+# Double protection: ignore all scan output in this directory
+*
+!.gitkeep
+!.gitignore
