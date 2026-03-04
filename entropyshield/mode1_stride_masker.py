@@ -57,10 +57,44 @@ def _get_rng(seed: Optional[int] = None) -> random.Random:
 #  Tokenizer — word-level Latin, char-level CJK
 # ═══════════════════════════════════════════
 
+# Characters that force sub-token splits inside a word.
+# Splits paths (/), URLs (://?&=), emails (@), dotted names (.),
+# hyphenated keys (sk-ant-), and underscored identifiers (github_pat_).
+_SPLIT_RE = re.compile(r"([/:@?&=.\-_])")
+
+
+def _subtokenize(word: str, start: int) -> list[dict]:
+    """Split a non-space, non-CJK word on URI/path/email delimiters.
+
+    Example: "/Users/henry/.claude" →
+        ["/Users", "/henry", "/", ".claude"]
+    Example: "evil@hack.com" →
+        ["evil", "@hack", ".com"]
+    """
+    parts = _SPLIT_RE.split(word)  # e.g. ["", "/", "Users", "/", "henry"]
+    tokens: list[dict] = []
+    pos = start
+    buf = ""
+    for part in parts:
+        if not part:
+            continue
+        if _SPLIT_RE.fullmatch(part):
+            # Delimiter char — attach to the next chunk as prefix
+            buf += part
+        else:
+            buf += part
+            tokens.append({"text": buf, "start": pos, "end": pos + len(buf)})
+            pos += len(buf)
+            buf = ""
+    if buf:
+        tokens.append({"text": buf, "start": pos, "end": pos + len(buf)})
+    return tokens
+
+
 def tokenize(text: str) -> list[dict]:
     """Split text into tokens preserving original positions.
 
-    Latin/mixed words → one token per space-separated word.
+    Latin/mixed words → sub-tokens split on URI/path/email delimiters.
     CJK characters    → one token per character.
     """
     tokens: list[dict] = []
@@ -78,7 +112,8 @@ def tokenize(text: str) -> list[dict]:
             j = i
             while j < n and not text[j].isspace() and not _CJK_RE.match(text[j]):
                 j += 1
-            tokens.append({"text": text[i:j], "start": i, "end": j})
+            word = text[i:j]
+            tokens.extend(_subtokenize(word, i))
             i = j
 
     return tokens
