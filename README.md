@@ -61,6 +61,12 @@ The AI understands the text discusses "sending credentials" — but the imperati
 
 ### Installation
 
+```bash
+pip install entropyshield
+```
+
+<br>
+
 ### MCP Server (for AI CLIs) (recommend for your claude code)
 
 ```bash
@@ -81,11 +87,6 @@ After setup, your AI has 3 safety tools that run automatically (no permission pr
 
 <br>
 
-```bash
-pip install entropyshield
-```
-
-<br>
 
 ### Python API
 
