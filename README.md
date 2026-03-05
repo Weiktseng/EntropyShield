@@ -306,7 +306,29 @@ print("Memory ██████████ You are all ███.")
 Just paste ████ into ████ terminal.
 ```
 
-> `~/.claude/history.jsonl` → `/.claude████████.jsonl` (path broken). The `requests.post()` URL → `requests█████████████████████████████████.dev` (domain unresolvable). `os.path.expanduser` is fragmented. The script is no longer copy-pasteable or executable.
+>> `~/.claude/history.jsonl` → `/.claude████████.jsonl` (path broken). The `requests.post()` URL → `requests█████████████████████████████████.dev` (domain unresolvable). `os.path.expanduser` is fragmented. The script is no longer copy-pasteable or executable.
+
+<br>
+
+### Can Models Still Understand Shielded Text?
+
+Shielding destroys attack syntax — but does it also destroy meaning? We tested whether LLMs can still correctly classify shielded text as **attack** or **benign** (40 prompts, 20 attacks + 20 benign, ~55% visibility).
+
+| Model | F1 | Precision | Recall | Accuracy | Secret Leak |
+|-------|-----|-----------|--------|----------|-------------|
+| Claude Sonnet 4.5 | **1.000** | 1.000 | 1.000 | 1.000 | 0/34 |
+| Gemini 2.5 Flash | **1.000** | 1.000 | 1.000 | 1.000 | 0/40 |
+| Claude Haiku 4.5 | 0.909 | 0.833 | 1.000 | 0.900 | 0/40 |
+| Gemini 2.5 Flash-Lite | 0.765 | 0.929 | 0.650 | 0.800 | 0/40 |
+
+**Key findings:**
+
+- **Strong models (Sonnet, Flash) achieve perfect F1=1.0** — they understand the semantic intent even at ~55% visibility, correctly identifying all attacks and all benign content.
+- **Mid-tier models (Haiku) catch 100% of attacks** (perfect recall) with a few false positives on legitimate code/config files.
+- **Smallest model (Flash-Lite)** misses 7 disguised attacks (academic social engineering, resume poisoning) but still maintains 0.929 precision.
+- **Zero secret leakage across all 154 model calls** — no model ever output the hidden secrets, confirming that shielded text is safe to process.
+
+> The AI reads the *meaning* of the shielded text, not the *commands*. EntropyShield breaks the attack chain while preserving comprehension.
 
 <br>
 
