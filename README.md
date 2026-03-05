@@ -306,7 +306,7 @@ print("Memory ██████████ You are all ███.")
 Just paste ████ into ████ terminal.
 ```
 
->> `~/.claude/history.jsonl` → `/.claude████████.jsonl` (path broken). The `requests.post()` URL → `requests█████████████████████████████████.dev` (domain unresolvable). `os.path.expanduser` is fragmented. The script is no longer copy-pasteable or executable.
+>> `~/.claude/history.jsonl` → `/.claude████████.jsonl` (path broken). The `requests.post()` URL → `requests█████████████████████████████████.dev` (domain unresolvable). `os.path.expanduser` is fragmented. The script is no longer copy-pasteable or executable. And yes—those random Chinese tokens actually make the whole thing harder to weaponize!
 
 <br>
 
