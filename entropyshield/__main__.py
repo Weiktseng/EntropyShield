@@ -71,7 +71,7 @@ def _setup():
     if claude_bin:
         print("[1/2] Adding EntropyShield MCP server...")
         subprocess.run(
-            [claude_bin, "mcp", "add", "entropyshield", "--", sys.executable, "-m", "entropyshield", "--mcp"],
+            [claude_bin, "mcp", "add", "-s", "user", "entropyshield", "--", sys.executable, "-m", "entropyshield", "--mcp"],
             check=False,
         )
     else:
