@@ -103,6 +103,29 @@ def _create_server():
                     "required": ["url"],
                 },
             ),
+            types.Tool(
+                name="shield_read_code",
+                description=(
+                    "Read a source code or binary file with code-aware shielding. "
+                    "Preserves code logic (imports, function calls, control flow) "
+                    "while shielding only comments and string literals where prompt "
+                    "injection can hide. Detects obfuscation patterns (base64, eval, "
+                    "exec, subprocess). For binary files (.pyc, .so, .dll, .exe), "
+                    "extracts and shields embedded strings. Use this to review "
+                    "package source code before installation, or any code file "
+                    "from an untrusted source."
+                ),
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "file_path": {
+                            "type": "string",
+                            "description": "Absolute path to the file to read",
+                        },
+                    },
+                    "required": ["file_path"],
+                },
+            ),
         ]
 
     @server.call_tool()
@@ -182,6 +205,23 @@ def _create_server():
                 return [types.TextContent(
                     type="text",
                     text=f"[EntropyShield] Fetch error: {e}",
+                )]
+
+        elif name == "shield_read_code":
+            file_path = arguments.get("file_path", "")
+            if not file_path:
+                return [types.TextContent(
+                    type="text",
+                    text="[EntropyShield] Error: no file_path provided",
+                )]
+            try:
+                from .code_shield import shield_code_file
+                result = shield_code_file(file_path)
+                return [types.TextContent(type="text", text=result)]
+            except Exception as e:
+                return [types.TextContent(
+                    type="text",
+                    text=f"[EntropyShield] Code shield error: {e}",
                 )]
 
         return [types.TextContent(
@@ -273,6 +313,17 @@ def _run_stdio_fallback():
                                 "required": ["url"],
                             },
                         },
+                        {
+                            "name": "shield_read_code",
+                            "description": "Read source code or binary with code-aware shielding. Preserves code logic while shielding comments/strings. Detects obfuscation (base64, eval, exec). For binaries, extracts embedded strings. Use to review package source before installation.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "file_path": {"type": "string", "description": "File path"},
+                                },
+                                "required": ["file_path"],
+                            },
+                        },
                     ]
                 },
             }
@@ -308,6 +359,16 @@ def _run_stdio_fallback():
                         result_text = "\n\n".join(parts)
                     except Exception as e:
                         result_text = f"[EntropyShield] Fetch error: {e}"
+            elif tool_name == "shield_read_code":
+                fp = args.get("file_path", "")
+                if not fp:
+                    result_text = "[EntropyShield] Error: no file_path provided"
+                else:
+                    try:
+                        from .code_shield import shield_code_file
+                        result_text = shield_code_file(fp)
+                    except Exception as e:
+                        result_text = f"[EntropyShield] Code shield error: {e}"
             else:
                 result_text = f"[Unknown tool: {tool_name}]"
 

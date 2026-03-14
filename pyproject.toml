@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "entropyshield"
-version = "0.1.0"
+version = "0.2.0"
 description = "Deterministic Prompt Injection Defense via Semantic Fragmentation"
 readme = "README.md"
 license = {text = "MIT"}
